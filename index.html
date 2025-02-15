@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Advanced Budget Tracker</title>
-  <!-- Bootstrap CSS for responsive design -->
+  <!-- Bootstrap CSS for styling and responsive layout -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
   <!-- Chart.js for interactive charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -34,7 +34,7 @@
       max-width: 500px;
       margin: 20px auto;
     }
-    /* Main App Section hidden until login */
+    /* Hide main app section until user is logged in */
     #app-section {
       display: none;
     }
@@ -43,17 +43,17 @@
       text-align: left;
       padding-left: 15px;
     }
-    /* Main Category Row: Bold text with pastel-blue background */
+    /* Main Category Row: Bold text, pastel blue background */
     .main-category {
       background-color: #e6f7ff;
       font-weight: bold;
     }
-    /* Sub-Category Row: Indented, pastel-yellow background, smaller text */
+    /* Sub-Category Row: Indented, pastel yellow background, smaller font */
     .subcategory {
       background-color: #fff9e6;
       font-size: 0.9em;
     }
-    /* Center table cells (except first column) */
+    /* Center text in non-first table cells */
     #budgetTable td:not(:first-child) {
       text-align: center;
     }
@@ -76,10 +76,10 @@
   </style>
 </head>
 <body>
-  <!-- Notification Area (for alerts and messages) -->
+  <!-- Notification Area -->
   <div id="notification"></div>
 
-  <!-- Authentication Section: Login and Signup -->
+  <!-- Authentication Section (Login / Signup) -->
   <div class="container-custom mb-3" id="auth-section">
     <!-- Login Form -->
     <div id="login-form" class="card p-3">
@@ -126,7 +126,7 @@
           </tr>
         </thead>
         <tbody id="budgetTableBody">
-          <!-- Budget rows (main categories and sub-categories) are generated dynamically -->
+          <!-- Budget rows (main and sub-categories) will be generated dynamically -->
         </tbody>
       </table>
     </div>
@@ -203,7 +203,7 @@
       </form>
     </div>
     
-    <!-- Export/Import & Bank Integration Buttons -->
+    <!-- Export/Import & Bank Integration -->
     <div class="mb-3">
       <button id="export-btn" class="btn btn-outline-secondary btn-sm">Export CSV</button>
       <input type="file" id="import-file" class="form-control d-inline-block" style="width: auto;">
@@ -261,7 +261,7 @@
     </div>
   </div>
   
-  <!-- Category Transactions Modal (to view transactions for a specific category) -->
+  <!-- Category Transactions Modal (for viewing transactions in a specific category) -->
   <div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -346,6 +346,7 @@
     /**********************************
      * Firebase Initialization & Configuration
      **********************************/
+    // Import Firebase modules from the modular SDK.
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import {
       getAuth,
@@ -356,7 +357,7 @@
     } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
     import { getFirestore } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
     
-    // Firebase configuration using your provided information.
+    // Firebase configuration (using your provided credentials)
     const firebaseConfig = {
       apiKey: "AIzaSyA20mW5oI1ay681o5L9gY21LFGcjcB9wfc",
       authDomain: "budget-tracker-7a9a4.firebaseapp.com",
@@ -366,7 +367,7 @@
       appId: "1:414594370996:web:8d29f1efccbd98de0536e1"
     };
     
-    // Initialize Firebase
+    // Initialize Firebase app, authentication, and Firestore.
     const appFirebase = initializeApp(firebaseConfig);
     const auth = getAuth(appFirebase);
     const db = getFirestore(appFirebase);
@@ -440,7 +441,7 @@
         userInfoEl.textContent = "Logged in as: " + user.email;
         authSection.style.display = "none";
         appSection.style.display = "block";
-        // Initialize budget and transaction data after login.
+        // After login, load budgeting data.
         initBudget().then(renderTransactions).then(updateCharts);
       } else {
         userInfoEl.textContent = "";
@@ -495,10 +496,10 @@
       { category: "Misc", allocation: 200, subcategories: [] }
     ];
     
-    // Global variables to store the current budget state.
-    let budgetDataGlobal = [];  // Hierarchical budget data for the current month.
+    // Global variables to store current budget state.
+    let budgetDataGlobal = [];  // Hierarchical data for the current month.
     let spentData = {};         // Tracks spending for main and subcategories.
-    let allocationsGlobal = {}; // Mapping of current targets.
+    let allocationsGlobal = {}; // Mapping of current target amounts.
     
     // DOM references for budget table and transaction category dropdowns.
     const budgetTableBody = document.getElementById("budgetTableBody");
@@ -508,7 +509,7 @@
     /**********************************
      * Firestore Data Persistence Functions
      **********************************/
-    // Get a reference to the current user's Firestore document.
+    // Helper: Get current user's document reference.
     function getUserDocRef() {
       return db.collection("users").doc(auth.currentUser.uid);
     }
@@ -521,6 +522,7 @@
       if (docSnap.exists) {
         return docSnap.data();
       } else {
+        // Build default structure.
         let structure = {};
         defaultBudget.forEach(item => {
           if (item.subcategories && item.subcategories.length > 0) {
@@ -566,7 +568,7 @@
      **********************************/
     async function initBudget() {
       const stored = await loadBudgetTargets();
-      // Build the hierarchical structure by merging defaults with stored values.
+      // Merge defaults with stored targets to build our hierarchical structure.
       budgetDataGlobal = [];
       defaultBudget.forEach(item => {
         if (typeof stored[item.category] === "number") {
@@ -595,12 +597,12 @@
         }
       });
       
-      // Clear the budget table and dropdowns.
+      // Clear budget table and dropdowns.
       budgetTableBody.innerHTML = "";
       transactionCategorySelect.innerHTML = '<option value="">-- Select Category --</option>';
       editTransactionCategorySelect.innerHTML = '<option value="">-- Select Category --</option>';
       
-      // Reset spent data.
+      // Reset spending data.
       spentData = {};
       
       // Loop through each main category.
@@ -614,14 +616,14 @@
           <td>$${main.target.toFixed(2)}</td>
           <td id="leftover-${main.category}">$${main.target.toFixed(2)}</td>
         `;
-        // Clicking main category shows its transaction history (including subcategories).
+        // Clicking main category shows its transactions (including sub-categories)
         mainRow.cells[0].addEventListener("click", () => showCategoryTransactions(main.category));
         budgetTableBody.appendChild(mainRow);
         leftoverCells[main.category] = mainRow.cells[2];
         addOptionToSelect(transactionCategorySelect, main.category);
         addOptionToSelect(editTransactionCategorySelect, main.category);
         
-        // If there are subcategories, create rows for each.
+        // Create rows for each sub-category if present.
         if (main.subcategories && main.subcategories.length > 0) {
           main.subcategories.forEach(sub => {
             const key = `${main.category} > ${sub.category}`;
@@ -635,7 +637,7 @@
               <td>$${sub.target.toFixed(2)}</td>
               <td id="leftover-${key}">$${sub.target.toFixed(2)}</td>
             `;
-            // Clicking subcategory shows its transaction history.
+            // Clicking sub-category shows its transactions.
             subRow.cells[0].addEventListener("click", () => showCategoryTransactions(key));
             budgetTableBody.appendChild(subRow);
             leftoverCells[key] = subRow.cells[2];
@@ -648,7 +650,7 @@
       // Append Totals row for main categories.
       const totalsRow = document.createElement("tr");
       totalsRow.id = "totalsRow";
-      let totalAllocations = budgetDataGlobal.reduce((sum, main) => sum + main.target, 0);
+      const totalAllocations = budgetDataGlobal.reduce((sum, main) => sum + main.target, 0);
       totalsRow.innerHTML = `
         <td>Totals</td>
         <td>$${totalAllocations.toFixed(2)}</td>
@@ -659,7 +661,7 @@
       totalsLeftoverCell = totalsRow.cells[2];
     }
     
-    // Helper: Add an option to a select element if not already present.
+    // Helper: Add an option to a select element.
     function addOptionToSelect(selectElem, category) {
       if (![...selectElem.options].some(opt => opt.value === category)) {
         const option = document.createElement("option");
@@ -669,39 +671,40 @@
       }
     }
     
-    /***********************************************
+    /**********************************
      * Editing Budget Targets
-     ***********************************************/
-    // If subCategory is null, edit main category; else, edit subcategory.
+     **********************************/
+    // If subCategory is null, edit the main category; otherwise, edit the sub-category.
     function editBudgetTarget(mainCategory, subCategory) {
       if (subCategory === null) {
-        let mainObj = budgetDataGlobal.find(item => item.category === mainCategory);
+        const mainObj = budgetDataGlobal.find(item => item.category === mainCategory);
         const current = mainObj.target;
         const newVal = prompt(`Enter new target for ${mainCategory}:`, current);
         if (newVal !== null) {
           const parsed = parseFloat(newVal);
           if (!isNaN(parsed) && parsed >= 0) {
             mainObj.target = parsed;
-            let stored = {};
+            // Save updated main category target to Firestore.
+            const stored = {};
             stored[mainCategory] = parsed;
             saveBudgetTargets(stored);
             renderTransactions().then(initBudget);
           } else alert("Please enter a valid number.");
         }
       } else {
-        let mainObj = budgetDataGlobal.find(item => item.category === mainCategory);
+        const mainObj = budgetDataGlobal.find(item => item.category === mainCategory);
         if (!mainObj || !mainObj.subcategories) return;
-        let subObj = mainObj.subcategories.find(s => s.category === subCategory);
+        const subObj = mainObj.subcategories.find(s => s.category === subCategory);
         const current = subObj.target;
         const newVal = prompt(`Enter new target for ${mainCategory} > ${subCategory}:`, current);
         if (newVal !== null) {
           const parsed = parseFloat(newVal);
           if (!isNaN(parsed) && parsed >= 0) {
             subObj.target = parsed;
-            // Recalculate parent's target as sum of its subcategories.
-            let newMainTotal = mainObj.subcategories.reduce((sum, s) => sum + s.target, 0);
+            // Recalculate the main category target.
+            const newMainTotal = mainObj.subcategories.reduce((sum, s) => sum + s.target, 0);
             mainObj.target = newMainTotal;
-            let stored = {};
+            const stored = {};
             if (typeof stored[mainCategory] === "object") {
               stored[mainCategory][subCategory] = parsed;
             } else {
@@ -714,9 +717,10 @@
       }
     }
     
-    /***********************************************
+    /**********************************
      * Auto Add Transaction for Sub-Category
-     ***********************************************/
+     **********************************/
+    // This function creates a new transaction for the full target amount of a sub-category.
     function autoAddSubCategory(mainCat, subCat, amount) {
       const today = new Date().toISOString().split("T")[0];
       const transaction = {
@@ -734,13 +738,13 @@
       });
     }
     
-    /***********************************************
+    /**********************************
      * Rendering Transactions & Updating Charts
-     ***********************************************/
+     **********************************/
     async function renderTransactions() {
       const txs = await loadTransactions();
       
-      // Reset spent data.
+      // Reset spending data.
       budgetDataGlobal.forEach(main => {
         spentData[main.category] = 0;
         if (main.subcategories) {
@@ -750,7 +754,7 @@
         }
       });
       
-      // Build Transaction History Table.
+      // Build the Transaction History Table.
       const txTableBody = document.getElementById("transactionsTable").querySelector("tbody");
       txTableBody.innerHTML = "";
       txs.forEach(tx => {
@@ -774,7 +778,7 @@
         txTableBody.appendChild(row);
       });
       
-      // Update leftover values in budget table.
+      // Update leftover values in the budget table.
       budgetDataGlobal.forEach(main => {
         const mainSpent = spentData[main.category] || 0;
         const mainLeftover = main.target - mainSpent;
@@ -808,9 +812,9 @@
       updateCharts();
     }
     
-    /***********************************************
+    /**********************************
      * Chart.js Functions
-     ***********************************************/
+     **********************************/
     let budgetChart, spentChart, spentChart3, spentChart12;
     
     function updateCharts() {
@@ -878,7 +882,7 @@
       });
     }
     
-    // For simplicity, the charts for past 3 and 12 months use the current spending as a placeholder.
+    // For simplicity, the charts for past 3 and 12 months use the current spending data as a placeholder.
     function createSpentChart3() {
       const ctx3 = document.getElementById("spentChart3").getContext("2d");
       if (spentChart3) spentChart3.destroy();
@@ -950,9 +954,11 @@
      * Export/Import Functions (Placeholders)
      **********************************/
     function exportCSV() {
+      // Placeholder for CSV export.
       showNotification("Export CSV functionality is not implemented.", "warning");
     }
     function importCSV(file) {
+      // Placeholder for CSV import.
       showNotification("Import CSV functionality is not implemented.", "warning");
     }
     
@@ -1054,4 +1060,3 @@
   </script>
 </body>
 </html>
-
