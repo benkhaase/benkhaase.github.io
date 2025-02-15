@@ -1,71 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Hierarchical Budget Tracker</title>
-  <!-- Bootstrap CSS -->
+  <meta charset="UTF-8">
+  <title>Advanced Budget Tracker</title>
+  <!-- Bootstrap CSS for responsive design -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-  <!-- Chart.js -->
+  <!-- Chart.js for interactive charts -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
+    /* Global Page Styles */
     body {
-      margin: 20px;
       background-color: #fafafa;
       font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 20px;
     }
     h1, h2 {
       text-align: center;
-      margin-top: 20px;
       color: #333;
     }
     .container-custom {
       max-width: 1100px;
-      margin: 0 auto;
+      margin: auto;
     }
-    /* Pastel backgrounds for categories */
-    .main-category {
-      background-color: #e6f7ff; /* light pastel blue */
-      font-weight: bold;
+    /* Notification area for alerts */
+    #notification {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1050;
     }
-    .subcategory {
-      background-color: #fff9e6; /* light pastel yellow */
-      font-size: 0.9em;
+    /* Authentication Section Styles */
+    #auth-section {
+      max-width: 500px;
+      margin: 20px auto;
     }
-    /* Ensure first column cells are left aligned */
+    /* Main App Section hidden until login */
+    #app-section {
+      display: none;
+    }
+    /* Budget Table Styles */
     #budgetTable td:first-child {
       text-align: left;
+      padding-left: 15px;
     }
-    /* Add some spacing for subcategory cells */
-    .subcategory td:first-child {
-      padding-left: 30px;
+    /* Main Category Row: Bold text with pastel-blue background */
+    .main-category {
+      background-color: #e6f7ff;
+      font-weight: bold;
     }
-    /* Button styling adjustments */
-    .small-btn {
-      font-size: 0.8rem;
-      padding: 2px 6px;
-      margin-left: 5px;
+    /* Sub-Category Row: Indented, pastel-yellow background, smaller text */
+    .subcategory {
+      background-color: #fff9e6;
+      font-size: 0.9em;
     }
-    /* Center table text except for first column */
+    /* Center table cells (except first column) */
     #budgetTable td:not(:first-child) {
       text-align: center;
     }
-    /* Additional pastel accent colors for charts etc. if needed */
+    /* Small button styling */
+    .small-btn {
+      font-size: 0.8rem;
+      margin-left: 5px;
+    }
+    /* Chart container styling */
+    .charts-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-around;
+      margin-top: 20px;
+    }
+    .chart-box {
+      width: 350px;
+      margin-bottom: 30px;
+    }
   </style>
 </head>
 <body>
-  <div class="container-custom">
-    <h1>My Budget Tracker</h1>
+  <!-- Notification Area (for alerts and messages) -->
+  <div id="notification"></div>
 
+  <!-- Authentication Section: Login and Signup -->
+  <div class="container-custom mb-3" id="auth-section">
+    <!-- Login Form -->
+    <div id="login-form" class="card p-3">
+      <h4 class="text-center">Login</h4>
+      <input type="email" id="login-email" class="form-control my-2" placeholder="Email" required>
+      <input type="password" id="login-password" class="form-control my-2" placeholder="Password" required>
+      <button id="login-btn" class="btn btn-primary w-100">Login</button>
+      <p class="text-center mt-2">Don't have an account? <a href="#" id="show-signup">Sign Up</a></p>
+    </div>
+    <!-- Signup Form -->
+    <div id="signup-form" class="card p-3" style="display: none;">
+      <h4 class="text-center">Sign Up</h4>
+      <input type="email" id="signup-email" class="form-control my-2" placeholder="Email" required>
+      <input type="password" id="signup-password" class="form-control my-2" placeholder="Password" required>
+      <button id="signup-btn" class="btn btn-success w-100">Sign Up</button>
+      <p class="text-center mt-2">Already have an account? <a href="#" id="show-login">Login</a></p>
+    </div>
+  </div>
+
+  <!-- Main App Section (displayed after login) -->
+  <div class="container-custom" id="app-section">
+    <!-- Header with Logout -->
+    <div class="d-flex justify-content-between align-items-center">
+      <h1>Advanced Budget Tracker</h1>
+      <button id="logout-btn" class="btn btn-outline-secondary">Logout</button>
+    </div>
+    <p id="user-info" class="text-end"></p>
+    
     <!-- Month Selector -->
     <div class="text-center mb-3">
       <label for="selectedMonth" class="form-label">Select Budget Month:</label>
-      <input type="month" id="selectedMonth" class="form-control d-inline-block" style="width: auto;" />
+      <input type="month" id="selectedMonth" class="form-control d-inline-block" style="width: auto;">
     </div>
-
-    <!-- Budget Allocation Table -->
+    
+    <!-- Budget Allocations Table -->
     <h2>Budget Allocations</h2>
-    <div>
-      <table class="table table-bordered" id="budgetTable">
+    <div class="budget-table">
+      <table class="table table-bordered text-center" id="budgetTable">
         <thead class="table-dark">
           <tr>
             <th>Category</th>
@@ -74,39 +126,92 @@
           </tr>
         </thead>
         <tbody id="budgetTableBody">
-          <!-- Main category & subcategory rows (plus Totals) will be inserted dynamically -->
+          <!-- Budget rows (main categories and sub-categories) are generated dynamically -->
         </tbody>
       </table>
     </div>
-
+    
+    <!-- Form to Add New Main Category -->
+    <div class="mb-4">
+      <h4>Add New Main Category</h4>
+      <form id="addCategoryForm" class="row g-2">
+        <div class="col-md-6">
+          <input type="text" id="newCategoryName" class="form-control" placeholder="Category Name" required>
+        </div>
+        <div class="col-md-4">
+          <input type="number" step="0.01" id="newCategoryTarget" class="form-control" placeholder="Target Amount" required>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">Add</button>
+        </div>
+      </form>
+    </div>
+    
+    <!-- Form to Add New Sub-Category -->
+    <div class="mb-4">
+      <h4>Add New Sub-Category</h4>
+      <form id="addSubCategoryForm" class="row g-2">
+        <div class="col-md-4">
+          <select id="parentCategory" class="form-select" required>
+            <!-- Options populated dynamically with existing main categories -->
+          </select>
+        </div>
+        <div class="col-md-4">
+          <input type="text" id="newSubCategoryName" class="form-control" placeholder="Sub-Category Name" required>
+        </div>
+        <div class="col-md-2">
+          <input type="number" step="0.01" id="newSubCategoryTarget" class="form-control" placeholder="Target" required>
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">Add</button>
+        </div>
+      </form>
+    </div>
+    
     <!-- Transaction Form -->
     <h2>Add a Transaction</h2>
     <div>
       <form id="transactionForm">
         <div class="mb-3">
           <label for="transactionName" class="form-label">Transaction Name</label>
-          <input type="text" class="form-control" id="transactionName" placeholder="e.g., Grocery Run" required />
+          <input type="text" class="form-control" id="transactionName" placeholder="e.g., Grocery Run" required>
         </div>
         <div class="mb-3">
           <label for="transactionCategory" class="form-label">Category</label>
           <select class="form-select" id="transactionCategory" required>
             <option value="">-- Select Category --</option>
-            <!-- Options added dynamically (format: "Main" or "Main > Sub") -->
+            <!-- Options added dynamically: main categories and "Main > Sub" -->
           </select>
         </div>
         <div class="mb-3">
           <label for="transactionAmount" class="form-label">Amount</label>
-          <input type="number" step="0.01" class="form-control" id="transactionAmount" placeholder="e.g., 50.00" required />
+          <input type="number" step="0.01" class="form-control" id="transactionAmount" placeholder="e.g., 50.00" required>
         </div>
         <div class="mb-3">
           <label for="transactionDate" class="form-label">Date</label>
-          <input type="date" class="form-control" id="transactionDate" required />
+          <input type="date" class="form-control" id="transactionDate" required>
+        </div>
+        <div class="mb-3">
+          <label for="transactionNotes" class="form-label">Notes</label>
+          <textarea id="transactionNotes" class="form-control" placeholder="Optional notes..."></textarea>
+        </div>
+        <div class="mb-3">
+          <label for="transactionTags" class="form-label">Tags</label>
+          <input type="text" id="transactionTags" class="form-control" placeholder="Comma-separated tags">
         </div>
         <button type="submit" class="btn btn-primary">Add Transaction</button>
       </form>
     </div>
-
-    <!-- Charts -->
+    
+    <!-- Export/Import & Bank Integration Buttons -->
+    <div class="mb-3">
+      <button id="export-btn" class="btn btn-outline-secondary btn-sm">Export CSV</button>
+      <input type="file" id="import-file" class="form-control d-inline-block" style="width: auto;">
+      <button id="import-btn" class="btn btn-outline-secondary btn-sm">Import CSV</button>
+      <button id="import-bank-btn" class="btn btn-outline-info btn-sm">Import Bank Transactions</button>
+    </div>
+    
+    <!-- Charts Section -->
     <h2>Budget vs. Spent Overview</h2>
     <div class="charts-container">
       <div class="chart-box">
@@ -116,8 +221,6 @@
         <canvas id="spentChart"></canvas>
       </div>
     </div>
-
-    <!-- Additional Pie Charts for Past 3 and 12 Months -->
     <h2>Spending Over Time</h2>
     <div class="charts-container">
       <div class="chart-box">
@@ -129,15 +232,15 @@
         <p class="text-center">Past 12 Months</p>
       </div>
     </div>
-
-    <!-- Monthly/Yearly Summaries -->
-    <div>
+    
+    <!-- Summaries -->
+    <div class="mb-3">
       <h2>Spending Summaries</h2>
       <p><strong>This Month’s Total Spent:</strong> $<span id="monthlySpent">0.00</span></p>
       <p><strong>This Year’s Total Spent:</strong> $<span id="yearlySpent">0.00</span></p>
     </div>
-
-    <!-- Transaction History -->
+    
+    <!-- Transaction History Table -->
     <div>
       <h2>Transaction History</h2>
       <table class="table table-striped" id="transactionsTable">
@@ -147,17 +250,18 @@
             <th>Category</th>
             <th>Amount</th>
             <th>Date</th>
+            <th>Notes/Tags</th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <!-- Transactions inserted dynamically -->
+          <!-- Transaction rows generated dynamically -->
         </tbody>
       </table>
     </div>
   </div>
-
-  <!-- Category Transactions Modal -->
+  
+  <!-- Category Transactions Modal (to view transactions for a specific category) -->
   <div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg">
       <div class="modal-content">
@@ -172,6 +276,7 @@
                 <th>Transaction Name</th>
                 <th>Amount</th>
                 <th>Date</th>
+                <th>Notes/Tags</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -183,7 +288,7 @@
       </div>
     </div>
   </div>
-
+  
   <!-- Edit Transaction Modal -->
   <div class="modal fade" id="editTransactionModal" tabindex="-1" aria-labelledby="editTransactionModalLabel" aria-hidden="true">
     <div class="modal-dialog">
@@ -194,72 +299,189 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body">
-            <input type="hidden" id="editTransactionId" />
+            <!-- Hidden field for transaction ID -->
+            <input type="hidden" id="editTransactionId">
             <div class="mb-3">
               <label for="editTransactionName" class="form-label">Transaction Name</label>
-              <input type="text" class="form-control" id="editTransactionName" required />
+              <input type="text" class="form-control" id="editTransactionName" required>
             </div>
             <div class="mb-3">
               <label for="editTransactionCategory" class="form-label">Category</label>
               <select class="form-select" id="editTransactionCategory" required>
-                <!-- Options inserted dynamically -->
+                <!-- Options generated dynamically -->
               </select>
             </div>
             <div class="mb-3">
               <label for="editTransactionAmount" class="form-label">Amount</label>
-              <input type="number" step="0.01" class="form-control" id="editTransactionAmount" required />
+              <input type="number" step="0.01" class="form-control" id="editTransactionAmount" required>
             </div>
             <div class="mb-3">
               <label for="editTransactionDate" class="form-label">Date</label>
-              <input type="date" class="form-control" id="editTransactionDate" required />
+              <input type="date" class="form-control" id="editTransactionDate" required>
+            </div>
+            <div class="mb-3">
+              <label for="editTransactionNotes" class="form-label">Notes</label>
+              <textarea id="editTransactionNotes" class="form-control"></textarea>
+            </div>
+            <div class="mb-3">
+              <label for="editTransactionTags" class="form-label">Tags</label>
+              <input type="text" id="editTransactionTags" class="form-control" placeholder="Comma-separated tags">
             </div>
           </div>
           <div class="modal-footer">
             <button type="submit" class="btn btn-primary">Save Changes</button>
-            <button type="button" class="btn btn-danger" id="deleteTransactionBtn">Delete Transaction</button>
+            <button type="button" id="deleteTransactionBtn" class="btn btn-danger">Delete Transaction</button>
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
           </div>
         </form>
       </div>
     </div>
   </div>
-
+  
   <!-- Bootstrap JS Bundle (includes Popper) -->
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  <script>
-    /******************************************
-     * Global Data & Initialization Variables *
-     ******************************************/
-    // Default hierarchical budget data.
-    const defaultBudgetData = [
+  
+  <!-- Main JavaScript using ES6 Modules -->
+  <script type="module">
+    /**********************************
+     * Firebase Initialization & Configuration
+     **********************************/
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import {
+      getAuth,
+      signInWithEmailAndPassword,
+      createUserWithEmailAndPassword,
+      signOut,
+      onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    
+    // Firebase configuration using your provided information.
+    const firebaseConfig = {
+      apiKey: "AIzaSyA20mW5oI1ay681o5L9gY21LFGcjcB9wfc",
+      authDomain: "budget-tracker-7a9a4.firebaseapp.com",
+      projectId: "budget-tracker-7a9a4",
+      storageBucket: "budget-tracker-7a9a4.firebasestorage.app",
+      messagingSenderId: "414594370996",
+      appId: "1:414594370996:web:8d29f1efccbd98de0536e1"
+    };
+    
+    // Initialize Firebase
+    const appFirebase = initializeApp(firebaseConfig);
+    const auth = getAuth(appFirebase);
+    const db = getFirestore(appFirebase);
+    
+    /**********************************
+     * Authentication Logic & UI
+     **********************************/
+    const loginForm = document.getElementById("login-form");
+    const signupForm = document.getElementById("signup-form");
+    const showSignupLink = document.getElementById("show-signup");
+    const showLoginLink = document.getElementById("show-login");
+    const loginBtn = document.getElementById("login-btn");
+    const signupBtn = document.getElementById("signup-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const userInfoEl = document.getElementById("user-info");
+    const authSection = document.getElementById("auth-section");
+    const appSection = document.getElementById("app-section");
+    
+    // Toggle between login and signup forms.
+    showSignupLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      loginForm.style.display = "none";
+      signupForm.style.display = "block";
+    });
+    showLoginLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      signupForm.style.display = "none";
+      loginForm.style.display = "block";
+    });
+    
+    // Login event handler.
+    loginBtn.addEventListener("click", () => {
+      const email = document.getElementById("login-email").value;
+      const password = document.getElementById("login-password").value;
+      signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          console.log("Logged in:", userCredential.user);
+        })
+        .catch((error) => {
+          alert("Login error: " + error.message);
+        });
+    });
+    
+    // Signup event handler.
+    signupBtn.addEventListener("click", () => {
+      const email = document.getElementById("signup-email").value;
+      const password = document.getElementById("signup-password").value;
+      createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+          console.log("Signed up:", userCredential.user);
+        })
+        .catch((error) => {
+          alert("Signup error: " + error.message);
+        });
+    });
+    
+    // Logout event handler.
+    logoutBtn.addEventListener("click", () => {
+      signOut(auth)
+        .then(() => {
+          console.log("User logged out");
+        })
+        .catch((error) => {
+          alert("Logout error: " + error.message);
+        });
+    });
+    
+    // Listen for authentication state changes.
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        userInfoEl.textContent = "Logged in as: " + user.email;
+        authSection.style.display = "none";
+        appSection.style.display = "block";
+        // Initialize budget and transaction data after login.
+        initBudget().then(renderTransactions).then(updateCharts);
+      } else {
+        userInfoEl.textContent = "";
+        authSection.style.display = "block";
+        appSection.style.display = "none";
+      }
+    });
+    
+    /**********************************
+     * Global Budget Presets & Data Structures
+     **********************************/
+    // Default budget structure with preset main categories and sub-categories.
+    const defaultBudget = [
       { 
-        category: 'Housing', allocation: 2300, 
+        category: "Housing", allocation: 2300, 
         subcategories: [
-          { category: 'Mortgage', allocation: 1631.82 },
-          { category: 'HOA', allocation: 486.56 },
-          { category: 'Electric', allocation: 63.26 },
-          { category: 'Wifi', allocation: 55.00 }
+          { category: "Mortgage", allocation: 1631.82 },
+          { category: "HOA", allocation: 486.56 },
+          { category: "Electric", allocation: 63.26 },
+          { category: "Wifi", allocation: 55.00 }
         ]
       },
       { 
-        category: 'Debt', allocation: 720, 
+        category: "Debt", allocation: 720, 
         subcategories: [
           { category: "Bens Student Loans", allocation: 269.19 },
           { category: "White Car", allocation: 450 }
         ]
       },
       { 
-        category: 'Insurance', allocation: 90, 
+        category: "Insurance", allocation: 90, 
         subcategories: [
           { category: "White Car", allocation: 121.00 }
         ]
       },
-      { category: 'Charging', allocation: 160 },
-      { category: 'Groceries', allocation: 400 },
-      { category: 'Restaurants', allocation: 200 },
-      { category: 'Shopping', allocation: 100 },
+      { category: "Charging", allocation: 160, subcategories: [] },
+      { category: "Groceries", allocation: 400, subcategories: [] },
+      { category: "Restaurants", allocation: 200, subcategories: [] },
+      { category: "Shopping", allocation: 100, subcategories: [] },
       { 
-        category: 'Subscriptions', allocation: 250, 
+        category: "Subscriptions", allocation: 250, 
         subcategories: [
           { category: "Spotify", allocation: 19.99 },
           { category: "FSD", allocation: 107.00 },
@@ -267,58 +489,41 @@
           { category: "Yoga", allocation: 119.00 }
         ]
       },
-      { category: 'House Fund', allocation: 100 },
-      { category: 'Maya Fund', allocation: 100 },
-      { category: 'Ben Fund', allocation: 100 },
-      { category: 'Misc', allocation: 200 }
+      { category: "House Fund", allocation: 100, subcategories: [] },
+      { category: "Maya Fund", allocation: 100, subcategories: [] },
+      { category: "Ben Fund", allocation: 100, subcategories: [] },
+      { category: "Misc", allocation: 200, subcategories: [] }
     ];
-
-    // Global variables to hold the current month’s budget structure.
-    let budgetData = []; 
-    // For spending totals per category (main and subcategories, with sub keys as "Main > Sub")
-    let spentData = {}; 
-    // Mapping for current targets.
-    let allocations = {}; 
-    // References to "Money Left Over" cells.
-    const leftoverCells = {};
-    let totalsLeftoverCell = null;
-    let totalsAllocCell = null; 
-
-    // Chart variables
-    let budgetChart, spentChart, spentChart3, spentChart12;
-
-    // DOM element references
-    const budgetTableBody = document.getElementById('budgetTableBody');
-    const transactionCategorySelect = document.getElementById('transactionCategory');
-    const monthInput = document.getElementById('selectedMonth');
-
-    // Set month selector to current month if not set.
-    const now = new Date();
-    if (!monthInput.value) { monthInput.value = now.toISOString().slice(0, 7); }
-
-    // ------------------------------
-    // Utility: Get Selected Month & Year
-    // ------------------------------
-    function getSelectedMonthYear() {
-      const value = monthInput.value;
-      if (value) {
-        const [year, month] = value.split('-');
-        return { year: parseInt(year), month: parseInt(month) - 1 };
-      }
-      return { year: now.getFullYear(), month: now.getMonth() };
+    
+    // Global variables to store the current budget state.
+    let budgetDataGlobal = [];  // Hierarchical budget data for the current month.
+    let spentData = {};         // Tracks spending for main and subcategories.
+    let allocationsGlobal = {}; // Mapping of current targets.
+    
+    // DOM references for budget table and transaction category dropdowns.
+    const budgetTableBody = document.getElementById("budgetTableBody");
+    const transactionCategorySelect = document.getElementById("transactionCategory");
+    const editTransactionCategorySelect = document.getElementById("editTransactionCategory");
+    
+    /**********************************
+     * Firestore Data Persistence Functions
+     **********************************/
+    // Get a reference to the current user's Firestore document.
+    function getUserDocRef() {
+      return db.collection("users").doc(auth.currentUser.uid);
     }
-
-    // ------------------------------
-    // Local Storage: Budget Targets
-    // ------------------------------
-    function loadBudgetTargets() {
-      const key = 'budgetTargets_' + monthInput.value;
-      const stored = localStorage.getItem(key);
-      if (stored) return JSON.parse(stored);
-      else {
+    
+    // Load budget targets for the current month from Firestore.
+    async function loadBudgetTargets() {
+      const key = "budgetTargets_" + monthInput.value;
+      const docRef = getUserDocRef().collection("budgets").doc(key);
+      const docSnap = await docRef.get();
+      if (docSnap.exists) {
+        return docSnap.data();
+      } else {
         let structure = {};
-        defaultBudgetData.forEach(item => {
-          if (item.subcategories) {
+        defaultBudget.forEach(item => {
+          if (item.subcategories && item.subcategories.length > 0) {
             structure[item.category] = {};
             item.subcategories.forEach(sub => {
               structure[item.category][sub.category] = sub.allocation;
@@ -330,21 +535,43 @@
         return structure;
       }
     }
-    function saveBudgetTargets(structure) {
-      const key = 'budgetTargets_' + monthInput.value;
-      localStorage.setItem(key, JSON.stringify(structure));
+    
+    // Save budget targets for the current month to Firestore.
+    async function saveBudgetTargets(structure) {
+      const key = "budgetTargets_" + monthInput.value;
+      return getUserDocRef().collection("budgets").doc(key).set(structure);
     }
-
-    // ------------------------------
-    // Build Hierarchical Budget Data & Update Budget Table
-    // ------------------------------
-    function initBudget() {
-      const stored = loadBudgetTargets();
-      budgetData = [];
-      defaultBudgetData.forEach(item => {
-        if (typeof stored[item.category] === 'number') {
-          budgetData.push({ category: item.category, target: parseFloat(stored[item.category]), subcategories: null });
-        } else if (typeof stored[item.category] === 'object') {
+    
+    // Load transactions for the current month from Firestore.
+    async function loadTransactions() {
+      const key = "transactions_" + monthInput.value;
+      const snapshot = await getUserDocRef().collection("transactions").get();
+      let txs = [];
+      snapshot.forEach(doc => { txs.push(doc.data()); });
+      return txs;
+    }
+    
+    // Save a transaction to Firestore.
+    async function saveTransaction(transaction) {
+      return getUserDocRef().collection("transactions").doc(transaction.id).set(transaction);
+    }
+    
+    // Delete a transaction from Firestore.
+    async function deleteTransactionFromDB(id) {
+      return getUserDocRef().collection("transactions").doc(id).delete();
+    }
+    
+    /**********************************
+     * UI Rendering: Budget Table
+     **********************************/
+    async function initBudget() {
+      const stored = await loadBudgetTargets();
+      // Build the hierarchical structure by merging defaults with stored values.
+      budgetDataGlobal = [];
+      defaultBudget.forEach(item => {
+        if (typeof stored[item.category] === "number") {
+          budgetDataGlobal.push({ category: item.category, target: parseFloat(stored[item.category]), subcategories: [] });
+        } else if (typeof stored[item.category] === "object") {
           let subcats = [];
           let sum = 0;
           for (const sub in stored[item.category]) {
@@ -352,133 +579,117 @@
             subcats.push({ category: sub, target: val });
             sum += val;
           }
-          budgetData.push({ category: item.category, target: sum, subcategories: subcats });
+          budgetDataGlobal.push({ category: item.category, target: sum, subcategories: subcats });
         } else {
-          if (item.subcategories) {
+          if (item.subcategories && item.subcategories.length > 0) {
             let subcats = [];
             let sum = 0;
             item.subcategories.forEach(sub => {
               subcats.push({ category: sub.category, target: sub.allocation });
               sum += sub.allocation;
             });
-            budgetData.push({ category: item.category, target: sum, subcategories: subcats });
+            budgetDataGlobal.push({ category: item.category, target: sum, subcategories: subcats });
           } else {
-            budgetData.push({ category: item.category, target: item.allocation, subcategories: null });
+            budgetDataGlobal.push({ category: item.category, target: item.allocation, subcategories: [] });
           }
         }
       });
-
-      // Clear table and dropdowns.
-      budgetTableBody.innerHTML = '';
+      
+      // Clear the budget table and dropdowns.
+      budgetTableBody.innerHTML = "";
       transactionCategorySelect.innerHTML = '<option value="">-- Select Category --</option>';
-      addOptionToSelect(document.getElementById('editTransactionCategory'), "dummy");
-
-      // Loop through main categories.
-      budgetData.forEach(main => {
-        // MAIN CATEGORY ROW
-        allocations[main.category] = main.target;
-        let mainRow = budgetTableBody.insertRow();
+      editTransactionCategorySelect.innerHTML = '<option value="">-- Select Category --</option>';
+      
+      // Reset spent data.
+      spentData = {};
+      
+      // Loop through each main category.
+      budgetDataGlobal.forEach(main => {
+        allocationsGlobal[main.category] = main.target;
+        // Create main category row.
+        const mainRow = document.createElement("tr");
         mainRow.classList.add("main-category");
-        let mainCell = mainRow.insertCell();
-        mainCell.textContent = main.category;
-        mainCell.classList.add("clickable");
-        mainCell.addEventListener('click', () => showCategoryTransactions(main.category));
-        let mainTargetCell = mainRow.insertCell();
-        mainTargetCell.textContent = `$${main.target.toFixed(2)}`;
-        if (!main.subcategories) {
-          mainTargetCell.innerHTML += ' <span class="edit-icon" title="Edit Target">✎</span>';
-          mainTargetCell.querySelector('.edit-icon').addEventListener('click', (e) => {
-            e.stopPropagation();
-            editBudgetTarget(main.category, null);
-          });
-        }
-        let mainLeftoverCell = mainRow.insertCell();
-        mainLeftoverCell.textContent = `$${main.target.toFixed(2)}`;
-        leftoverCells[main.category] = mainLeftoverCell;
+        mainRow.innerHTML = `
+          <td class="clickable">${main.category}</td>
+          <td>$${main.target.toFixed(2)}</td>
+          <td id="leftover-${main.category}">$${main.target.toFixed(2)}</td>
+        `;
+        // Clicking main category shows its transaction history (including subcategories).
+        mainRow.cells[0].addEventListener("click", () => showCategoryTransactions(main.category));
+        budgetTableBody.appendChild(mainRow);
+        leftoverCells[main.category] = mainRow.cells[2];
         addOptionToSelect(transactionCategorySelect, main.category);
-        addOptionToSelect(document.getElementById('editTransactionCategory'), main.category);
-
-        // SUBCATEGORY ROWS (if any)
-        if (main.subcategories) {
+        addOptionToSelect(editTransactionCategorySelect, main.category);
+        
+        // If there are subcategories, create rows for each.
+        if (main.subcategories && main.subcategories.length > 0) {
           main.subcategories.forEach(sub => {
-            let key = `${main.category} > ${sub.category}`;
-            allocations[key] = sub.target;
-            let subRow = budgetTableBody.insertRow();
+            const key = `${main.category} > ${sub.category}`;
+            allocationsGlobal[key] = sub.target;
+            const subRow = document.createElement("tr");
             subRow.classList.add("subcategory");
-            let subCell = subRow.insertCell();
-            // Display subcategory name offset to the right.
-            subCell.textContent = sub.category;
-            subCell.classList.add("clickable");
-            subCell.addEventListener('click', () => showCategoryTransactions(key));
-            // Add an "Auto Add" button next to the subcategory name.
-            let addBtn = document.createElement("button");
-            addBtn.className = "btn btn-primary btn-sm small-btn";
-            addBtn.textContent = "Auto Add";
-            addBtn.addEventListener('click', (e) => {
-              e.stopPropagation();
-              autoCreateSubcategoryTransaction(main.category, sub.category, sub.target);
-            });
-            subCell.appendChild(addBtn);
-
-            let subTargetCell = subRow.insertCell();
-            subTargetCell.innerHTML = `$${sub.target.toFixed(2)} <span class="edit-icon" title="Edit Subcategory Target">✎</span>`;
-            subTargetCell.querySelector('.edit-icon').addEventListener('click', (e) => {
-              e.stopPropagation();
-              editBudgetTarget(main.category, sub.category);
-            });
-            let subLeftoverCell = subRow.insertCell();
-            subLeftoverCell.textContent = `$${sub.target.toFixed(2)}`;
-            leftoverCells[key] = subLeftoverCell;
+            subRow.innerHTML = `
+              <td class="clickable">${sub.category} 
+                <button class="btn btn-primary btn-sm small-btn" onclick="autoAddSubCategory('${main.category}', '${sub.category}', ${sub.target})">Auto Add</button>
+              </td>
+              <td>$${sub.target.toFixed(2)}</td>
+              <td id="leftover-${key}">$${sub.target.toFixed(2)}</td>
+            `;
+            // Clicking subcategory shows its transaction history.
+            subRow.cells[0].addEventListener("click", () => showCategoryTransactions(key));
+            budgetTableBody.appendChild(subRow);
+            leftoverCells[key] = subRow.cells[2];
             addOptionToSelect(transactionCategorySelect, key);
-            addOptionToSelect(document.getElementById('editTransactionCategory'), key);
+            addOptionToSelect(editTransactionCategorySelect, key);
           });
         }
       });
-
-      // Append Totals row (for main categories only).
-      let totalsRow = budgetTableBody.insertRow();
-      totalsRow.id = 'totalsRow';
-      let labelCell = totalsRow.insertCell();
-      labelCell.textContent = 'Totals';
-      let totalAllocCell = totalsRow.insertCell();
-      let totalAllocations = budgetData.reduce((sum, main) => sum + main.target, 0);
-      totalAllocCell.textContent = `$${totalAllocations.toFixed(2)}`;
-      totalsAllocCell = totalAllocCell;
-      totalsLeftoverCell = totalsRow.insertCell();
-      totalsLeftoverCell.id = 'totalsLeftover';
-      totalsLeftoverCell.textContent = `$${totalAllocations.toFixed(2)}`;
+      
+      // Append Totals row for main categories.
+      const totalsRow = document.createElement("tr");
+      totalsRow.id = "totalsRow";
+      let totalAllocations = budgetDataGlobal.reduce((sum, main) => sum + main.target, 0);
+      totalsRow.innerHTML = `
+        <td>Totals</td>
+        <td>$${totalAllocations.toFixed(2)}</td>
+        <td id="totalsLeftover">$${totalAllocations.toFixed(2)}</td>
+      `;
+      budgetTableBody.appendChild(totalsRow);
+      totalsAllocCell = totalsRow.cells[1];
+      totalsLeftoverCell = totalsRow.cells[2];
     }
-
+    
+    // Helper: Add an option to a select element if not already present.
     function addOptionToSelect(selectElem, category) {
       if (![...selectElem.options].some(opt => opt.value === category)) {
-        let option = document.createElement('option');
+        const option = document.createElement("option");
         option.value = category;
         option.textContent = category;
         selectElem.appendChild(option);
       }
     }
-
-    // ------------------------------
-    // Editing Budget Targets
-    // ------------------------------
+    
+    /***********************************************
+     * Editing Budget Targets
+     ***********************************************/
+    // If subCategory is null, edit main category; else, edit subcategory.
     function editBudgetTarget(mainCategory, subCategory) {
       if (subCategory === null) {
-        let mainObj = budgetData.find(item => item.category === mainCategory);
+        let mainObj = budgetDataGlobal.find(item => item.category === mainCategory);
         const current = mainObj.target;
         const newVal = prompt(`Enter new target for ${mainCategory}:`, current);
         if (newVal !== null) {
           const parsed = parseFloat(newVal);
           if (!isNaN(parsed) && parsed >= 0) {
             mainObj.target = parsed;
-            let stored = loadBudgetTargets();
+            let stored = {};
             stored[mainCategory] = parsed;
             saveBudgetTargets(stored);
-            renderTransactions();
-            initBudget();
+            renderTransactions().then(initBudget);
           } else alert("Please enter a valid number.");
         }
       } else {
-        let mainObj = budgetData.find(item => item.category === mainCategory);
+        let mainObj = budgetDataGlobal.find(item => item.category === mainCategory);
         if (!mainObj || !mainObj.subcategories) return;
         let subObj = mainObj.subcategories.find(s => s.category === subCategory);
         const current = subObj.target;
@@ -487,59 +698,50 @@
           const parsed = parseFloat(newVal);
           if (!isNaN(parsed) && parsed >= 0) {
             subObj.target = parsed;
+            // Recalculate parent's target as sum of its subcategories.
             let newMainTotal = mainObj.subcategories.reduce((sum, s) => sum + s.target, 0);
             mainObj.target = newMainTotal;
-            let stored = loadBudgetTargets();
-            if (typeof stored[mainCategory] === 'object') {
+            let stored = {};
+            if (typeof stored[mainCategory] === "object") {
               stored[mainCategory][subCategory] = parsed;
+            } else {
+              stored[mainCategory] = { [subCategory]: parsed };
             }
             saveBudgetTargets(stored);
-            renderTransactions();
-            initBudget();
+            renderTransactions().then(initBudget);
           } else alert("Please enter a valid number.");
         }
       }
     }
-
-    // ------------------------------
-    // Auto-create Transaction for a Subcategory
-    // ------------------------------
-    function autoCreateSubcategoryTransaction(mainCategory, subCategory, amount) {
-      const today = new Date().toISOString().split('T')[0];
+    
+    /***********************************************
+     * Auto Add Transaction for Sub-Category
+     ***********************************************/
+    function autoAddSubCategory(mainCat, subCat, amount) {
+      const today = new Date().toISOString().split("T")[0];
       const transaction = {
         id: Date.now().toString(),
-        name: `Auto: ${subCategory}`,
-        category: `${mainCategory} > ${subCategory}`,
+        name: `Auto: ${subCat}`,
+        category: `${mainCat} > ${subCat}`,
         amount: amount,
-        date: today
+        date: today,
+        notes: "",
+        tags: ""
       };
-      let transactions = loadTransactions();
-      transactions.push(transaction);
-      saveTransactions(transactions);
-      renderTransactions();
+      saveTransaction(transaction).then(() => {
+        renderTransactions();
+        alert(`Auto transaction for ${mainCat} > ${subCat} of $${amount.toFixed(2)} added.`);
+      });
     }
-
-    // ------------------------------
-    // Local Storage: Transactions
-    // ------------------------------
-    function loadTransactions() {
-      const stored = localStorage.getItem('transactions');
-      return stored ? JSON.parse(stored) : [];
-    }
-    function saveTransactions(transactions) {
-      localStorage.setItem('transactions', JSON.stringify(transactions));
-    }
-
-    // ------------------------------
-    // Rendering Transactions & Summaries
-    // ------------------------------
-    function renderTransactions() {
-      const { month: selMonth, year: selYear } = getSelectedMonthYear();
-      const allTransactions = loadTransactions();
-      const monthlyTransactions = filterTransactionsByMonth(allTransactions, selMonth, selYear);
-
-      // Reset spentData.
-      budgetData.forEach(main => {
+    
+    /***********************************************
+     * Rendering Transactions & Updating Charts
+     ***********************************************/
+    async function renderTransactions() {
+      const txs = await loadTransactions();
+      
+      // Reset spent data.
+      budgetDataGlobal.forEach(main => {
         spentData[main.category] = 0;
         if (main.subcategories) {
           main.subcategories.forEach(sub => {
@@ -547,337 +749,309 @@
           });
         }
       });
-
-      const transactionsTableBody = document.getElementById('transactionsTable').querySelector('tbody');
-      transactionsTableBody.innerHTML = '';
-      monthlyTransactions.forEach(tx => {
-        let txCategory = tx.category;
-        let mainCat = txCategory.includes(" > ") ? txCategory.split(" > ")[0] : txCategory;
-        if (spentData[mainCat] === undefined) spentData[mainCat] = 0;
+      
+      // Build Transaction History Table.
+      const txTableBody = document.getElementById("transactionsTable").querySelector("tbody");
+      txTableBody.innerHTML = "";
+      txs.forEach(tx => {
+        const txCat = tx.category;
+        const mainCat = txCat.includes(" > ") ? txCat.split(" > ")[0] : txCat;
+        if (!spentData[mainCat]) spentData[mainCat] = 0;
         spentData[mainCat] += tx.amount;
-        if (txCategory.includes(" > ")) {
-          spentData[txCategory] += tx.amount;
+        if (txCat.includes(" > ")) {
+          if (!spentData[txCat]) spentData[txCat] = 0;
+          spentData[txCat] += tx.amount;
         }
-        let row = transactionsTableBody.insertRow();
-        row.insertCell().textContent = tx.name;
-        row.insertCell().textContent = tx.category;
-        row.insertCell().textContent = `$${tx.amount.toFixed(2)}`;
-        row.insertCell().textContent = tx.date;
-        let actionsCell = row.insertCell();
-        let editBtn = document.createElement('button');
-        editBtn.className = 'btn btn-secondary btn-sm small-btn';
-        editBtn.textContent = 'Edit';
-        editBtn.addEventListener('click', () => openEditTransactionModal(tx.id));
-        actionsCell.appendChild(editBtn);
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${tx.name}</td>
+          <td>${tx.category}</td>
+          <td>$${tx.amount.toFixed(2)}</td>
+          <td>${tx.date}</td>
+          <td>${tx.notes} ${tx.tags}</td>
+          <td><button class="btn btn-secondary btn-sm small-btn" onclick="openEditTransactionModal('${tx.id}')">Edit</button></td>
+        `;
+        txTableBody.appendChild(row);
       });
-
-      // Update leftover cells.
-      budgetData.forEach(main => {
-        let mainLeftover = main.target - (spentData[main.category] || 0);
-        leftoverCells[main.category].textContent = `$${mainLeftover.toFixed(2)}`;
-        if (mainLeftover < 0) leftoverCells[main.category].classList.add('over-budget');
-        else leftoverCells[main.category].classList.remove('over-budget');
+      
+      // Update leftover values in budget table.
+      budgetDataGlobal.forEach(main => {
+        const mainSpent = spentData[main.category] || 0;
+        const mainLeftover = main.target - mainSpent;
+        if (leftoverCells[main.category]) {
+          leftoverCells[main.category].textContent = `$${mainLeftover.toFixed(2)}`;
+          leftoverCells[main.category].classList.toggle("over-budget", mainLeftover < 0);
+        }
         if (main.subcategories) {
           main.subcategories.forEach(sub => {
-            let key = `${main.category} > ${sub.category}`;
-            let subLeftover = sub.target - (spentData[key] || 0);
-            leftoverCells[key].textContent = `$${subLeftover.toFixed(2)}`;
-            if (subLeftover < 0) leftoverCells[key].classList.add('over-budget');
-            else leftoverCells[key].classList.remove('over-budget');
+            const key = `${main.category} > ${sub.category}`;
+            const subSpent = spentData[key] || 0;
+            const subLeftover = sub.target - subSpent;
+            if (leftoverCells[key]) {
+              leftoverCells[key].textContent = `$${subLeftover.toFixed(2)}`;
+              leftoverCells[key].classList.toggle("over-budget", subLeftover < 0);
+            }
           });
         }
       });
-
+      
       // Update Totals row.
       let totalTarget = 0, totalLeftover = 0;
-      budgetData.forEach(main => {
+      budgetDataGlobal.forEach(main => {
         totalTarget += main.target;
         totalLeftover += main.target - (spentData[main.category] || 0);
       });
       totalsAllocCell.textContent = `$${totalTarget.toFixed(2)}`;
       totalsLeftoverCell.textContent = `$${totalLeftover.toFixed(2)}`;
-
+      
       // Update charts.
+      updateCharts();
+    }
+    
+    /***********************************************
+     * Chart.js Functions
+     ***********************************************/
+    let budgetChart, spentChart, spentChart3, spentChart12;
+    
+    function updateCharts() {
+      createBudgetChart();
       createSpentChart();
       createSpentChart3();
       createSpentChart12();
-      updateSummaries(allTransactions, monthlyTransactions, selYear);
     }
-
-    function filterTransactionsByMonth(transactions, month, year) {
-      return transactions.filter(tx => {
-        let txDate = new Date(tx.date);
-        return (txDate.getMonth() === month && txDate.getFullYear() === year);
-      });
-    }
-
-    function updateSummaries(allTransactions, monthlyTransactions, selectedYear) {
-      const monthlySpentElem = document.getElementById('monthlySpent');
-      const yearlySpentElem = document.getElementById('yearlySpent');
-      let monthlyTotal = monthlyTransactions.reduce((sum, tx) => sum + tx.amount, 0);
-      let yearlyTotal = allTransactions.filter(tx => new Date(tx.date).getFullYear() === selectedYear)
-                                       .reduce((sum, tx) => sum + tx.amount, 0);
-      monthlySpentElem.textContent = monthlyTotal.toFixed(2);
-      yearlySpentElem.textContent = yearlyTotal.toFixed(2);
-    }
-
-    // ------------------------------
-    // Pie Charts (Aggregated by Main Category)
-    // ------------------------------
+    
     function createBudgetChart() {
-      const ctxBudget = document.getElementById('budgetChart').getContext('2d');
+      const ctxBudget = document.getElementById("budgetChart").getContext("2d");
       if (budgetChart) budgetChart.destroy();
-      const labels = budgetData.map(main => main.category);
-      const dataAllocations = budgetData.map(main => main.target);
+      const labels = budgetDataGlobal.map(main => main.category);
+      const dataAllocations = budgetDataGlobal.map(main => main.target);
       budgetChart = new Chart(ctxBudget, {
-        type: 'pie',
+        type: "pie",
         data: {
-          labels,
+          labels: labels,
           datasets: [{
-            label: 'Budget Allocation',
+            label: "Budget Allocation",
             data: dataAllocations,
             backgroundColor: [
-              '#a2d5f2', '#ffb3ba', '#ffdfba', '#ffffba',
-              '#baffc9', '#bae1ff', '#fbc4ab', '#f6eac2',
-              '#c1c8e4', '#d4a5a5', '#f5d0a9', '#b8e0d2'
+              "#a2d5f2", "#ffb3ba", "#ffdfba", "#ffffba",
+              "#baffc9", "#bae1ff", "#fbc4ab", "#f6eac2",
+              "#c1c8e4", "#d4a5a5", "#f5d0a9", "#b8e0d2"
             ]
           }]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { position: 'bottom' },
-            title: { display: true, text: 'Budget Distribution (Targets)' }
+            legend: { position: "bottom" },
+            title: { display: true, text: "Budget Distribution (Targets)" }
           }
         }
       });
     }
-
+    
     function createSpentChart() {
-      const ctxSpent = document.getElementById('spentChart').getContext('2d');
+      const ctxSpent = document.getElementById("spentChart").getContext("2d");
       if (spentChart) spentChart.destroy();
-      const labels = budgetData.map(main => main.category);
-      const dataSpent = budgetData.map(main => spentData[main.category] || 0);
+      const labels = budgetDataGlobal.map(main => main.category);
+      const dataSpent = budgetDataGlobal.map(main => spentData[main.category] || 0);
       spentChart = new Chart(ctxSpent, {
-        type: 'pie',
+        type: "pie",
         data: {
-          labels,
+          labels: labels,
           datasets: [{
-            label: 'Spent (This Month)',
+            label: "Spent (This Month)",
             data: dataSpent,
             backgroundColor: [
-              '#a2d5f2', '#ffb3ba', '#ffdfba', '#ffffba',
-              '#baffc9', '#bae1ff', '#fbc4ab', '#f6eac2',
-              '#c1c8e4', '#d4a5a5', '#f5d0a9', '#b8e0d2'
+              "#a2d5f2", "#ffb3ba", "#ffdfba", "#ffffba",
+              "#baffc9", "#bae1ff", "#fbc4ab", "#f6eac2",
+              "#c1c8e4", "#d4a5a5", "#f5d0a9", "#b8e0d2"
             ]
           }]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { position: 'bottom' },
-            title: { display: true, text: 'Spent Distribution (This Month)' }
+            legend: { position: "bottom" },
+            title: { display: true, text: "Spent Distribution (This Month)" }
           }
         }
       });
     }
-
-    function calcSpentOverPeriod(startDate, endDate) {
-      const transactions = loadTransactions();
-      const periodTotals = {};
-      budgetData.forEach(main => { periodTotals[main.category] = 0; });
-      transactions.forEach(tx => {
-        let txDate = new Date(tx.date);
-        if (txDate >= startDate && txDate <= endDate) {
-          let mainCat = tx.category.includes(" > ") ? tx.category.split(" > ")[0] : tx.category;
-          if (periodTotals.hasOwnProperty(mainCat)) { periodTotals[mainCat] += tx.amount; }
-        }
-      });
-      return periodTotals;
-    }
-
+    
+    // For simplicity, the charts for past 3 and 12 months use the current spending as a placeholder.
     function createSpentChart3() {
-      const { year, month } = getSelectedMonthYear();
-      const startDate = new Date(year, month - 2, 1);
-      const endDate = new Date(year, month + 1, 0);
-      const periodTotals = calcSpentOverPeriod(startDate, endDate);
-      const labels = budgetData.map(main => main.category);
-      const dataSpent = labels.map(cat => periodTotals[cat] || 0);
-      const ctx3 = document.getElementById('spentChart3').getContext('2d');
+      const ctx3 = document.getElementById("spentChart3").getContext("2d");
       if (spentChart3) spentChart3.destroy();
+      const labels = budgetDataGlobal.map(main => main.category);
+      const dataSpent = labels.map(cat => spentData[cat] || 0);
       spentChart3 = new Chart(ctx3, {
-        type: 'pie',
+        type: "pie",
         data: {
-          labels,
+          labels: labels,
           datasets: [{
-            label: 'Spent (Past 3 Months)',
+            label: "Spent (Past 3 Months)",
             data: dataSpent,
             backgroundColor: [
-              '#a2d5f2', '#ffb3ba', '#ffdfba', '#ffffba',
-              '#baffc9', '#bae1ff', '#fbc4ab', '#f6eac2',
-              '#c1c8e4', '#d4a5a5', '#f5d0a9', '#b8e0d2'
+              "#a2d5f2", "#ffb3ba", "#ffdfba", "#ffffba",
+              "#baffc9", "#bae1ff", "#fbc4ab", "#f6eac2",
+              "#c1c8e4", "#d4a5a5", "#f5d0a9", "#b8e0d2"
             ]
           }]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { position: 'bottom' },
-            title: { display: true, text: 'Spent Distribution (Past 3 Months)' }
+            legend: { position: "bottom" },
+            title: { display: true, text: "Spent Distribution (Past 3 Months)" }
           }
         }
       });
     }
-
+    
     function createSpentChart12() {
-      const { year, month } = getSelectedMonthYear();
-      const startDate = new Date(year, month - 11, 1);
-      const endDate = new Date(year, month + 1, 0);
-      const periodTotals = calcSpentOverPeriod(startDate, endDate);
-      const labels = budgetData.map(main => main.category);
-      const dataSpent = labels.map(cat => periodTotals[cat] || 0);
-      const ctx12 = document.getElementById('spentChart12').getContext('2d');
+      const ctx12 = document.getElementById("spentChart12").getContext("2d");
       if (spentChart12) spentChart12.destroy();
+      const labels = budgetDataGlobal.map(main => main.category);
+      const dataSpent = labels.map(cat => spentData[cat] || 0);
       spentChart12 = new Chart(ctx12, {
-        type: 'pie',
+        type: "pie",
         data: {
-          labels,
+          labels: labels,
           datasets: [{
-            label: 'Spent (Past 12 Months)',
+            label: "Spent (Past 12 Months)",
             data: dataSpent,
             backgroundColor: [
-              '#a2d5f2', '#ffb3ba', '#ffdfba', '#ffffba',
-              '#baffc9', '#bae1ff', '#fbc4ab', '#f6eac2',
-              '#c1c8e4', '#d4a5a5', '#f5d0a9', '#b8e0d2'
+              "#a2d5f2", "#ffb3ba", "#ffdfba", "#ffffba",
+              "#baffc9", "#bae1ff", "#fbc4ab", "#f6eac2",
+              "#c1c8e4", "#d4a5a5", "#f5d0a9", "#b8e0d2"
             ]
           }]
         },
         options: {
           responsive: true,
           plugins: {
-            legend: { position: 'bottom' },
-            title: { display: true, text: 'Spent Distribution (Past 12 Months)' }
+            legend: { position: "bottom" },
+            title: { display: true, text: "Spent Distribution (Past 12 Months)" }
           }
         }
       });
     }
-
-    // ------------------------------
-    // Category Modal: Show Transactions
-    // ------------------------------
-    function showCategoryTransactions(category) {
-      const { month: selMonth, year: selYear } = getSelectedMonthYear();
-      const allTransactions = loadTransactions();
-      const monthlyTransactions = filterTransactionsByMonth(allTransactions, selMonth, selYear);
-      let filtered;
-      if (category.includes(" > ")) {
-        filtered = monthlyTransactions.filter(tx => tx.category === category);
-      } else {
-        filtered = monthlyTransactions.filter(tx => tx.category === category || tx.category.startsWith(category + " >"));
-      }
-      document.getElementById('categoryModalLabel').textContent = `Transactions for ${category} (${monthInput.value})`;
-      const modalTableBody = document.getElementById('categoryTransactionsTable').querySelector('tbody');
-      modalTableBody.innerHTML = '';
-      if (filtered.length === 0) {
-        let row = modalTableBody.insertRow();
-        let cell = row.insertCell();
-        cell.colSpan = 4;
-        cell.textContent = "No transactions for this category this month.";
-        cell.classList.add('text-center');
-      } else {
-        filtered.forEach(tx => {
-          let row = modalTableBody.insertRow();
-          row.insertCell().textContent = tx.name;
-          row.insertCell().textContent = `$${tx.amount.toFixed(2)}`;
-          row.insertCell().textContent = tx.date;
-          let actionsCell = row.insertCell();
-          let editBtn = document.createElement('button');
-          editBtn.className = 'btn btn-secondary btn-sm small-btn';
-          editBtn.textContent = 'Edit';
-          editBtn.addEventListener('click', () => openEditTransactionModal(tx.id));
-          actionsCell.appendChild(editBtn);
-        });
-      }
-      new bootstrap.Modal(document.getElementById('categoryModal')).show();
+    
+    /**********************************
+     * Notification Helper Function
+     **********************************/
+    function showNotification(message, type = "info") {
+      const notif = document.getElementById("notification");
+      notif.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      setTimeout(() => { notif.innerHTML = ""; }, 4000);
     }
-
-    // ------------------------------
-    // Transaction Editing
-    // ------------------------------
+    
+    /**********************************
+     * Export/Import Functions (Placeholders)
+     **********************************/
+    function exportCSV() {
+      showNotification("Export CSV functionality is not implemented.", "warning");
+    }
+    function importCSV(file) {
+      showNotification("Import CSV functionality is not implemented.", "warning");
+    }
+    
+    document.getElementById("export-btn").addEventListener("click", exportCSV);
+    document.getElementById("import-btn").addEventListener("click", () => {
+      const file = document.getElementById("import-file").files[0];
+      if (file) importCSV(file);
+    });
+    document.getElementById("import-bank-btn").addEventListener("click", () => {
+      showNotification("Bank transaction import is not implemented.", "warning");
+    });
+    
+    /**********************************
+     * Edit Transaction Modal Functions
+     **********************************/
     function openEditTransactionModal(id) {
-      let transactions = loadTransactions();
-      let tx = transactions.find(t => t.id === id);
-      if (!tx) return;
-      document.getElementById('editTransactionId').value = tx.id;
-      document.getElementById('editTransactionName').value = tx.name;
-      document.getElementById('editTransactionCategory').value = tx.category;
-      document.getElementById('editTransactionAmount').value = tx.amount;
-      document.getElementById('editTransactionDate').value = tx.date;
-      new bootstrap.Modal(document.getElementById('editTransactionModal')).show();
+      loadTransactions().then(txs => {
+        let tx = txs.find(t => t.id === id);
+        if (!tx) return;
+        document.getElementById("editTransactionId").value = tx.id;
+        document.getElementById("editTransactionName").value = tx.name;
+        document.getElementById("editTransactionCategory").value = tx.category;
+        document.getElementById("editTransactionAmount").value = tx.amount;
+        document.getElementById("editTransactionDate").value = tx.date;
+        document.getElementById("editTransactionNotes").value = tx.notes || "";
+        document.getElementById("editTransactionTags").value = tx.tags || "";
+        new bootstrap.Modal(document.getElementById("editTransactionModal")).show();
+      });
     }
-    document.getElementById('editTransactionForm').addEventListener('submit', function(e) {
+    
+    document.getElementById("editTransactionForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const id = document.getElementById('editTransactionId').value;
-      const name = document.getElementById('editTransactionName').value;
-      const category = document.getElementById('editTransactionCategory').value;
-      const amount = parseFloat(document.getElementById('editTransactionAmount').value);
-      const date = document.getElementById('editTransactionDate').value;
-      let transactions = loadTransactions();
-      const index = transactions.findIndex(t => t.id === id);
-      if (index >= 0) {
-        transactions[index] = { id, name, category, amount, date };
-        saveTransactions(transactions);
-        renderTransactions();
-        let modalEl = document.getElementById('editTransactionModal');
-        let modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-        modalInstance.hide();
+      const id = document.getElementById("editTransactionId").value;
+      const name = document.getElementById("editTransactionName").value;
+      const category = document.getElementById("editTransactionCategory").value;
+      const amount = parseFloat(document.getElementById("editTransactionAmount").value);
+      const date = document.getElementById("editTransactionDate").value;
+      const notes = document.getElementById("editTransactionNotes").value;
+      const tags = document.getElementById("editTransactionTags").value;
+      const transaction = { id, name, category, amount, date, notes, tags };
+      await saveTransaction(transaction);
+      await renderTransactions();
+      bootstrap.Modal.getInstance(document.getElementById("editTransactionModal")).hide();
+    });
+    
+    document.getElementById("deleteTransactionBtn").addEventListener("click", async () => {
+      const id = document.getElementById("editTransactionId").value;
+      await deleteTransactionFromDB(id);
+      await renderTransactions();
+      bootstrap.Modal.getInstance(document.getElementById("editTransactionModal")).hide();
+    });
+    
+    /**********************************
+     * Transaction Form Submission
+     **********************************/
+    document.getElementById("transactionForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = document.getElementById("transactionName").value;
+      const category = document.getElementById("transactionCategory").value;
+      const amount = parseFloat(document.getElementById("transactionAmount").value);
+      const date = document.getElementById("transactionDate").value;
+      const notes = document.getElementById("transactionNotes").value;
+      const tags = document.getElementById("transactionTags").value;
+      const id = Date.now().toString();
+      const transaction = { id, name, category, amount, date, notes, tags };
+      await saveTransaction(transaction);
+      await renderTransactions();
+      e.target.reset();
+    });
+    
+    /**********************************
+     * Month Change Listener
+     **********************************/
+    document.getElementById("selectedMonth").addEventListener("change", async () => {
+      await initBudget();
+      await renderTransactions();
+      updateCharts();
+    });
+    
+    /**********************************
+     * Initialization on Page Load
+     **********************************/
+    window.addEventListener("DOMContentLoaded", async () => {
+      if (auth.currentUser) {
+        await initBudget();
+        await renderTransactions();
+        updateCharts();
       }
     });
-    document.getElementById('deleteTransactionBtn').addEventListener('click', function() {
-      const id = document.getElementById('editTransactionId').value;
-      let transactions = loadTransactions();
-      transactions = transactions.filter(tx => tx.id !== id);
-      saveTransactions(transactions);
-      renderTransactions();
-      let modalEl = document.getElementById('editTransactionModal');
-      let modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-      modalInstance.hide();
-    });
-
-    // ------------------------------
-    // Transaction Form Submission
-    // ------------------------------
-    document.getElementById('transactionForm').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const name = document.getElementById('transactionName').value;
-      const category = document.getElementById('transactionCategory').value;
-      const amount = parseFloat(document.getElementById('transactionAmount').value);
-      const date = document.getElementById('transactionDate').value;
-      const id = Date.now().toString();
-      let transactions = loadTransactions();
-      transactions.push({ id, name, category, amount, date });
-      saveTransactions(transactions);
-      renderTransactions();
-      this.reset();
-    });
-
-    // ------------------------------
-    // Month Change Handling
-    // ------------------------------
-    monthInput.addEventListener('change', () => {
-      initBudget();
-      renderTransactions();
-      createBudgetChart();
-    });
-
-    // ------------------------------
-    // Initialization on Page Load
-    // ------------------------------
-    window.addEventListener('DOMContentLoaded', () => {
-      initBudget();
-      createBudgetChart();
-      renderTransactions();
-    });
+    
+    /**********************************
+     * Global Helper: Show Notification
+     **********************************/
+    function showNotification(message, type = "info") {
+      const notif = document.getElementById("notification");
+      notif.innerHTML = `<div class="alert alert-${type}">${message}</div>`;
+      setTimeout(() => { notif.innerHTML = ""; }, 4000);
+    }
   </script>
 </body>
 </html>
+
